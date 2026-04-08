@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>WebSwan Sudoku — Presume Partners 💛🦢</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      background: linear-gradient(135deg, #14395d, #54c3c7);
+      font-family: 'Segoe UI', 'Poppins', 'Roboto', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .game-container {
+      max-width: 650px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 48px;
+      padding: 20px 16px 30px;
+      box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3), 0 0 0 3px #54c3c7, 0 0 0 8px #14395d;
+      transition: all 0.2s;
+    }
+
+    /* header with logo and title */
+    .game-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+      padding: 0 5px;
+    }
+    .logo-link {
+      display: inline-block;
+      transition: transform 0.2s ease;
+    }
+    .logo-link:hover {
+      transform: scale(1.02);
+    }
+    .logo-img {
+      height: 55px;
+      width: auto;
+      max-width: 140px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+      border-radius: 20px;
+      background: white;
+      padding: 4px 8px;
+    }
+    .title-group {
+      text-align: center;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #14395d, #54c3c7);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 2px;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.05);
+    }
+    .sub {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #14395d;
+      font-weight: 600;
+      margin-top: -5px;
+      border-bottom: 1px dashed #54c3c7;
+      display: inline-block;
+      padding-bottom: 5px;
+    }
+
+    /* SUDOKU GRID */
+    .sudoku-grid {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      background-color: #1e4a6b;
+      border: 3px solid #14395d;
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 1 / 1;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      margin-top: 10px;
+    }
+
+    .cell {
+      background-color: #fffdf7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      font-weight: 600;
+      font-family: 'Courier New', 'Segoe UI', monospace;
+      cursor: pointer;
+      transition: 0.07s linear;
+      border: 1px solid #b9d8e0;
+      color: #14395d;
+      aspect-ratio: 1 / 1;
+    }
+
+    /* thicker borders for 3x3 blocks */
+    .cell[data-row="2"]:not([data-col="8"]),
+    .cell[data-row="5"]:not([data-col="8"]) {
+      border-bottom: 3px solid #14395d;
+    }
+    .cell[data-col="2"]:not([data-row="8"]),
+    .cell[data-col="5"]:not([data-row="8"]) {
+      border-right: 3px solid #14395d;
+    }
+
+    .cell.prefilled {
+      color: #54c3c7;
+      font-weight: 800;
+      background-color: #eef9ff;
+    }
+
+    .cell.selected {
+      background-color: #c3f0f2;
+      color: #14395d;
+      box-shadow: inset 0 0 0 2px #14395d;
+      transform: scale(0.98);
+    }
+
+    .cell.same-number {
+      background-color: #d4f5f7;
+    }
+
+    .cell.error-highlight {
+      background-color: #ffccd0;
+      color: #b00020;
+      text-decoration: underline;
+    }
+
+    /* number pad */
+    .number-pad {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin: 25px 10px 15px;
+    }
+
+    .num-btn {
+      background: linear-gradient(145deg, #54c3c7, #3aa8ac);
+      border: none;
+      padding: 14px 0;
+      font-size: 1.8rem;
+      font-weight: bold;
+      border-radius: 60px;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #1e6b6e;
+      transition: 0.07s linear;
+      font-family: monospace;
+      text-shadow: 0 1px 0 #14395d;
+    }
+
+    .num-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #1e6b6e;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin: 5px 10px 10px;
+    }
+
+    .action-btn {
+      flex: 1;
+      background: #14395d;
+      border: none;
+      padding: 12px 0;
+      border-radius: 40px;
+      font-weight: bold;
+      font-size: 1rem;
+      color: white;
+      cursor: pointer;
+      transition: 0.1s;
+      box-shadow: 0 3px 0 #0a243c;
+      font-family: inherit;
+    }
+
+    .action-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #0a243c;
+    }
+
+    .reset-btn {
+      background: #c77d1e;
+      box-shadow: 0 3px 0 #8b5610;
+    }
+
+    .newgame-btn {
+      background: #2c7a47;
+      box-shadow: 0 3px 0 #1e562f;
+    }
+
+    .message-area {
+      text-align: center;
+      margin-top: 18px;
+      font-weight: bold;
+      background: #eef9ff;
+      padding: 12px;
+      border-radius: 60px;
+      color: #14395d;
+      font-size: 0.9rem;
+      border-left: 5px solid #54c3c7;
+      border-right: 2px solid #54c3c7;
+    }
+
+    .difficulty {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 12px 10px 5px;
+    }
+    .diff-btn {
+      background: #e9ecef;
+      border: none;
+      padding: 6px 18px;
+      border-radius: 40px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: 0.1s;
+      color: #14395d;
+    }
+    .diff-btn.active {
+      background: #54c3c7;
+      color: white;
+      box-shadow: 0 0 0 2px #14395d;
+    }
+
+    .how-to-play {
+      background: #f0fafb;
+      margin-top: 20px;
+      padding: 12px 16px;
+      border-radius: 28px;
+      font-size: 0.8rem;
+      color: #14395d;
+      border: 1px solid #54c3c7;
+    }
+    .how-to-play summary {
+      font-weight: bold;
+      cursor: pointer;
+      color: #14395d;
+      background: #d9f1f3;
+      display: inline-block;
+      padding: 5px 15px;
+      border-radius: 40px;
+    }
+    .how-to-play p {
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.65rem;
+      margin-top: 18px;
+      color: #6c8b9b;
+    }
+
+    @media (max-width: 550px) {
+      .cell { font-size: 1.2rem; }
+      .num-btn { font-size: 1.4rem; padding: 10px 0; }
+      .action-btn { font-size: 0.75rem; padding: 10px 0; }
+      .game-container { padding: 16px; }
+      .logo-img { height: 45px; }
+      h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <!-- HEADER with clickable logo anchor link -->
+  <div class="game-header">
+    <a href="https://presumepartnersllc.taniadomingue.multisiteadmin.com/a/preview?page=%2Fcontact-us" target="_blank" rel="noopener noreferrer" class="logo-link" title="Visit Presume Partners">
+      <img src="https://d14tal8bchn59o.cloudfront.net/-696pBr9qonZ33hIBhissnKH8xlsnK3-cWKBVd__e4U/w:1920/plain/https://02f0a56ef46d93f03c90-22ac5f107621879d5667e0d7ed595bdb.ssl.cf2.rackcdn.com/sites/98993/photos/23391472/WSLogo-Photoroom_original.png" 
+           alt="WebSwan Logo" 
+           class="logo-img"
+           onerror="this.src='https://placehold.co/100x50?text=WebSwan'">
+    </a>
+    <div class="title-group">
+      <h1>🦢 WEBSWAN SUDOKU 💛</h1>
+      <div class="sub">Presume Partners · peace of mind puzzle</div>
+    </div>
+  </div>
+
+  <div class="difficulty">
+    <button class="diff-btn" data-diff="easy">🌿 Easy</button>
+    <button class="diff-btn active" data-diff="medium">✨ Medium</button>
+    <button class="diff-btn" data-diff="hard">🔥 Hard</button>
+  </div>
+
+  <div class="sudoku-grid" id="sudokuGrid"></div>
+
+  <div class="number-pad" id="numberPad">
+    <!-- JS will fill 1-9 and erase -->
+  </div>
+
+  <div class="action-buttons">
+    <button class="action-btn reset-btn" id="resetBtn">⟳ Reset</button>
+    <button class="action-btn" id="eraseBtn">🗑️ Erase</button>
+    <button class="action-btn newgame-btn" id="newGameBtn">✨ New Game</button>
+  </div>
+
+  <div class="message-area" id="messageBox">
+    🦢 Tap a cell → pick a number. Complete all rows, columns & 3x3 boxes!
+  </div>
+
+  <!-- HOW TO PLAY SECTION (collapsible) -->
+  <details class="how-to-play">
+    <summary>📖 How to play Sudoku? (click me)</summary>
+    <p>
+      ✨ <strong>Goal:</strong> Fill every row, column, and 3x3 box with digits 1–9 without repeating.<br>
+      🎯 <strong>Steps:</strong><br>
+      1️⃣ Tap on any <strong>empty white cell</strong> (blue numbers are fixed clues).<br>
+      2️⃣ Press a number on the <strong>number pad</strong> (1–9) to place it.<br>
+      3️⃣ If a number breaks the rules, the cell turns <strong style="color:#b00020;">pink/red</strong> — just change it!<br>
+      4️⃣ Use <strong>🗑️ Erase</strong> to clear a selected cell.<br>
+      5️⃣ <strong>⟳ Reset</strong> restarts your current puzzle.<br>
+      6️⃣ <strong>✨ New Game</strong> keeps same difficulty, fresh puzzle.<br>
+      🧠 <strong>Tip:</strong> The same-number highlight (light teal) helps spot duplicates. Win by matching the solution perfectly! 🏆
+    </p>
+  </details>
+
+  <footer>💛 every number counts — WebSwan Sudoku · peace of mind</footer>
+</div>
+
+<script>
+  // ---------- SUDOKU ENGINE ----------
+  // Predefined puzzle bank (easy, medium, hard) - each is a 9x9 grid with 0 for empty
+  const PUZZLE_BANK = {
+    easy: [
+      [5,3,0,0,7,0,0,0,0],
+      [6,0,0,1,9,5,0,0,0],
+      [0,9,8,0,0,0,0,6,0],
+      [8,0,0,0,6,0,0,0,3],
+      [4,0,0,8,0,3,0,0,1],
+      [7,0,0,0,2,0,0,0,6],
+      [0,6,0,0,0,0,2,8,0],
+      [0,0,0,4,1,9,0,0,5],
+      [0,0,0,0,8,0,0,7,9]
+    ],
+    medium: [
+      [0,0,0,2,6,0,7,0,1],
+      [6,8,0,0,7,0,0,9,0],
+      [0,0,0,0,0,5,0,0,0],
+      [0,2,0,0,0,6,3,0,0],
+      [0,0,9,0,0,0,4,0,0],
+      [0,0,7,9,0,0,0,5,0],
+      [0,0,0,7,0,0,0,0,0],
+      [0,6,0,0,3,0,0,4,8],
+      [3,0,5,0,9,2,0,0,0]
+    ],
+    hard: [
+      [0,0,0,6,0,0,4,0,0],
+      [7,0,0,0,0,3,6,0,0],
+      [0,0,0,0,9,1,0,8,0],
+      [0,0,0,0,0,0,0,0,0],
+      [0,5,0,1,8,0,0,0,3],
+      [0,0,0,3,0,6,0,4,5],
+      [0,4,0,2,0,0,0,6,0],
+      [9,0,3,0,0,0,0,0,0],
+      [0,2,0,0,0,0,1,0,0]
+    ]
+  };
+
+  const SOLUTIONS = {};
+
+  function solveSudoku(board) {
+    const cloned = board.map(row => [...row]);
+    function isValid(r, c, val) {
+      for (let i = 0; i < 9; i++) {
+        if (cloned[r][i] === val && i !== c) return false;
+        if (cloned[i][c] === val && i !== r) return false;
+        const boxRow = 3 * Math.floor(r / 3) + Math.floor(i / 3);
+        const boxCol = 3 * Math.floor(c / 3) + (i % 3);
+        if (cloned[boxRow][boxCol] === val && (boxRow !== r || boxCol !== c)) return false;
+      }
+      return true;
+    }
+    function solve() {
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (cloned[r][c] === 0) {
+            for (let v = 1; v <= 9; v++) {
+              if (isValid(r, c, v)) {
+                cloned[r][c] = v;
+                if (solve()) return true;
+                cloned[r][c] = 0;
+              }
+            }
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    solve();
+    return cloned;
+  }
+
+  for (let diff of ['easy', 'medium', 'hard']) {
+    SOLUTIONS[diff] = solveSudoku(PUZZLE_BANK[diff]);
+  }
+
+  let currentDifficulty = 'medium';
+  let originalPuzzle = JSON.parse(JSON.stringify(PUZZLE_BANK.medium));
+  let currentBoard = JSON.parse(JSON.stringify(originalPuzzle));
+  let solutionBoard = JSON.parse(JSON.stringify(SOLUTIONS.medium));
+  
+  let selectedRow = -1, selectedCol = -1;
+  const gridContainer = document.getElementById('sudokuGrid');
+  const messageBox = document.getElementById('messageBox');
+  
+  function isValidPlacement(row, col, val, board) {
+    if (val === 0) return true;
+    for (let c = 0; c < 9; c++) if (c !== col && board[row][c] === val) return false;
+    for (let r = 0; r < 9; r++) if (r !== row && board[r][col] === val) return false;
+    const startRow = Math.floor(row / 3) * 3, startCol = Math.floor(col / 3) * 3;
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        const r = startRow + i, c = startCol + j;
+        if ((r !== row || c !== col) && board[r][c] === val) return false;
+      }
+    }
+    return true;
+  }
+  
+  function checkWin() {
+    for (let i = 0; i < 9; i++) {
+      for (let j = 0; j < 9; j++) {
+        if (currentBoard[i][j] === 0 || currentBoard[i][j] !== solutionBoard[i][j]) return false;
+      }
+    }
+    return true;
+  }
+  
+  function showMessage(msg, isError = false) {
+    messageBox.innerHTML = isError ? `⚠️ ${msg}` : `🦢 ${msg}`;
+    if (!isError) {
+      setTimeout(() => {
+        if (messageBox.innerHTML === `🦢 ${msg}`) 
+          messageBox.innerHTML = `🦢 Tap a cell → pick a number. Complete all rows, columns & 3x3 boxes!`;
+      }, 2200);
+    }
+  }
+  
+  function renderGrid() {
+    gridContainer.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+      for (let j = 0; j < 9; j++) {
+        const value = currentBoard[i][j];
+        const isPrefilled = (originalPuzzle[i][j] !== 0);
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        if (isPrefilled) cell.classList.add('prefilled');
+        if (selectedRow === i && selectedCol === j) cell.classList.add('selected');
+        if (selectedRow !== -1 && selectedCol !== -1 && currentBoard[selectedRow][selectedCol] !== 0) {
+          const selectedVal = currentBoard[selectedRow][selectedCol];
+          if (value !== 0 && value === selectedVal) cell.classList.add('same-number');
+        }
+        if (value !== 0 && !isValidPlacement(i, j, value, currentBoard)) {
+          cell.classList.add('error-highlight');
+        }
+        cell.setAttribute('data-row', i);
+        cell.setAttribute('data-col', j);
+        cell.innerText = value === 0 ? '' : value;
+        cell.addEventListener('click', (function(r,c) { return function() { selectCell(r,c); }; })(i,j));
+        gridContainer.appendChild(cell);
+      }
+    }
+  }
+  
+  function selectCell(row, col) {
+    if (originalPuzzle[row][col] !== 0) {
+      selectedRow = -1;
+      selectedCol = -1;
+      renderGrid();
+      showMessage("Clue cells are fixed! Choose an empty cell.", true);
+      return;
+    }
+    selectedRow = row;
+    selectedCol = col;
+    renderGrid();
+    showMessage(`Selected cell (row ${row+1}, col ${col+1}) — pick a number 💛`);
+  }
+  
+  function placeNumber(num) {
+    if (selectedRow === -1 || selectedCol === -1) {
+      showMessage("First tap on an empty cell to select it!", true);
+      return;
+    }
+    if (originalPuzzle[selectedRow][selectedCol] !== 0) {
+      selectedRow = -1;
+      selectedCol = -1;
+      renderGrid();
+      showMessage("Cannot modify clue cell!", true);
+      return;
+    }
+    if (num === 0) {
+      currentBoard[selectedRow][selectedCol] = 0;
+      renderGrid();
+      if(checkWin()) showMessage("🎉 You won! Perfect logic! 🎉");
+      return;
+    }
+    const oldVal = currentBoard[selectedRow][selectedCol];
+    currentBoard[selectedRow][selectedCol] = num;
+    if (!isValidPlacement(selectedRow, selectedCol, num, currentBoard)) {
+      currentBoard[selectedRow][selectedCol] = oldVal;
+      showMessage(`🚫 ${num} breaks Sudoku rules! Try again.`, true);
+      renderGrid();
+      return;
+    }
+    renderGrid();
+    if (checkWin()) {
+      messageBox.innerHTML = `🏆✨ AMAZING! YOU SOLVED WEBSWAN SUDOKU! ✨🏆`;
+      showMessage(`🎉 PERFECT! Peace of mind unlocked! 🎉`);
+    } else {
+      showMessage(`✔️ Placed ${num} — great move!`);
+    }
+  }
+  
+  function eraseCell() {
+    if (selectedRow === -1 || selectedCol === -1) {
+      showMessage("Select a cell first before erasing.", true);
+      return;
+    }
+    if (originalPuzzle[selectedRow][selectedCol] !== 0) {
+      showMessage("Cannot erase clue cell!", true);
+      return;
+    }
+    currentBoard[selectedRow][selectedCol] = 0;
+    renderGrid();
+    showMessage("Cell cleared 💛");
+    if(checkWin()) checkWin();
+  }
+  
+  function resetGame() {
+    currentBoard = JSON.parse(JSON.stringify(originalPuzzle));
+    selectedRow = -1;
+    selectedCol = -1;
+    renderGrid();
+    showMessage("Game reset to original puzzle. Keep going!");
+  }
+  
+  function loadDifficulty(diff) {
+    currentDifficulty = diff;
+    originalPuzzle = JSON.parse(JSON.stringify(PUZZLE_BANK[diff]));
+    solutionBoard = JSON.parse(JSON.stringify(SOLUTIONS[diff]));
+    currentBoard = JSON.parse(JSON.stringify(originalPuzzle));
+    selectedRow = -1;
+    selectedCol = -1;
+    renderGrid();
+    showMessage(`✨ New ${diff.toUpperCase()} puzzle! Fill with love & logic ✨`);
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+      if(btn.dataset.diff === diff) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+  }
+  
+  function buildNumberPad() {
+    const pad = document.getElementById('numberPad');
+    pad.innerHTML = '';
+    for (let i = 1; i <= 9; i++) {
+      const btn = document.createElement('button');
+      btn.innerText = i;
+      btn.classList.add('num-btn');
+      btn.addEventListener('click', (function(num){ return function(){ placeNumber(num); }; })(i));
+      pad.appendChild(btn);
+    }
+    const eraseBig = document.createElement('button');
+    eraseBig.innerText = '⌫';
+    eraseBig.classList.add('num-btn');
+    eraseBig.style.background = "#c77d1e";
+    eraseBig.style.boxShadow = "0 5px 0 #8b5610";
+    eraseBig.addEventListener('click', () => eraseCell());
+    pad.appendChild(eraseBig);
+  }
+  
+  document.getElementById('resetBtn').addEventListener('click', resetGame);
+  document.getElementById('newGameBtn').addEventListener('click', () => loadDifficulty(currentDifficulty));
+  document.getElementById('eraseBtn').addEventListener('click', eraseCell);
+  
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const diff = e.target.dataset.diff;
+      if (diff === 'easy') loadDifficulty('easy');
+      else if (diff === 'medium') loadDifficulty('medium');
+      else if (diff === 'hard') loadDifficulty('hard');
+    });
+  });
+  
+  function init() {
+    buildNumberPad();
+    loadDifficulty('medium');
+  }
+  init();
+</script>
+</body>
+</html>
